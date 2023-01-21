@@ -6,7 +6,7 @@
   "background": {
     "service_worker": "background.js"
   },
-  "permissions": ["notifications", "storage", "tabs"],
+  "permissions": ["notifications", "storage", "tabs", "nativeMessaging"],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -15,6 +15,10 @@
       "48": "/images/get_started48.png",
       "128": "/images/get_started128.png"
     }
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": false
   },
   "icons": {
     "16": "/images/get_started16.png",

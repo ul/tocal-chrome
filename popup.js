@@ -27,29 +27,23 @@ initControl({ id: "offset", label: (x) => `+${x} day${x === 1 ? "s" : ""}` });
 
 document.getElementById("submit").addEventListener("click", (e) => {
   chrome.storage.sync.get(
-    ["duration", "offset"],
-    async ({ duration = 30, offset = 1 }) => {
+    ["duration", "offset", "command"],
+    async ({ duration = 30, offset = 1, command = "tocal" }) => {
       const tabs = await chrome.tabs.query({ active: true });
       const tab = tabs[0];
       if (tab && tab.url) {
-        const response = await fetch("http://127.0.0.1:4123/", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            offset,
-            duration,
-            summary: `${tab.title} - ${tab.url}`,
-          }),
+        const result = await chrome.runtime.sendNativeMessage("shell", {
+          command,
+          args: [`/${duration}`, `+${offset}`, `${tab.title} - ${tab.url}`],
+          output: true,
         });
         const notificationOptions = {
           type: "basic",
           iconUrl: "images/get_started48.png",
           title: "ToCal",
         };
-        if (response.ok) {
-          const message = await response.text();
+        if (result.status === 0) {
+          const message = result.output;
           chrome.runtime.sendMessage({ ...notificationOptions, message });
           chrome.tabs.remove(tab.id);
         } else {
