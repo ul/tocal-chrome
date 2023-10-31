@@ -12,7 +12,7 @@ const initControl = ({ id, label }) => {
       {
         [id]: value,
       },
-      () => updateControlLabel(value)
+      () => updateControlLabel(value),
     );
   });
 
@@ -32,27 +32,34 @@ document.getElementById("submit").addEventListener("click", (e) => {
       const tabs = await chrome.tabs.query({ active: true });
       const tab = tabs[0];
       if (tab && tab.url) {
-        const result = await chrome.runtime.sendNativeMessage("shell", {
+        const SHELL_EXTENSION_ID = "ohgecdnlcckpfnhjepfdcdgcfgebkdgl";
+        const port = chrome.runtime.connect(SHELL_EXTENSION_ID);
+        port.postMessage({
           command,
-          args: [`/${duration}`, `+${offset}`, `${tab.title} - ${tab.url}`],
-          output: true,
+          arguments: [
+            `/${duration}`,
+            `+${offset}`,
+            `${tab.title} - ${tab.url}`,
+          ],
         });
-        const notificationOptions = {
-          type: "basic",
-          iconUrl: "images/get_started48.png",
-          title: "ToCal",
-        };
-        if (result.status === 0) {
-          const message = result.output;
-          chrome.runtime.sendMessage({ ...notificationOptions, message });
-          chrome.tabs.remove(tab.id);
-        } else {
-          chrome.runtime.sendMessage({
-            ...notificationOptions,
-            message: "ToCal failed.",
-          });
-        }
+        port.onMessage.addListener((result) => {
+          const notificationOptions = {
+            type: "basic",
+            iconUrl: "images/get_started48.png",
+            title: "ToCal",
+          };
+          if (result.status === 0) {
+            const message = result.output;
+            chrome.runtime.sendMessage({ ...notificationOptions, message });
+            chrome.tabs.remove(tab.id);
+          } else {
+            chrome.runtime.sendMessage({
+              ...notificationOptions,
+              message: "ToCal failed.",
+            });
+          }
+        });
       }
-    }
+    },
   );
 });
